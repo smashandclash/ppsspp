@@ -1,0 +1,15 @@
+build/
+tools/cache/
+node_modules/
+*.o
+*.d
+*.elf
+*.nds
+*.gba
+EBOOT.PBP
+PARAM.SFO
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+*.log

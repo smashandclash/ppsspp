@@ -1,0 +1,10 @@
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.gif binary
+*.mp4 binary
+*.nds binary
+*.gba binary
+*.PBP binary
+*.deltaskin binary
+*.bin binary
