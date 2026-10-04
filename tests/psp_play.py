@@ -114,6 +114,25 @@ class Driver:
         print('shot', path, flush=True)
 
 
+def save_audio(d, path):
+    """The session's sound as a WAV, and how much of it was sound at all."""
+    import wave
+    import numpy as np
+    buf = np.frombuffer(d.session.audio.buffer, dtype=np.int16)
+    info = d.session.audio.system_av_info
+    rate = int(round(info.timing.sample_rate)) if info else 32768
+    with wave.open(path, 'wb') as w:
+        w.setnchannels(2)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes(buf.tobytes())
+    mono = buf.reshape(-1, 2).mean(axis=1) / 32768
+    secs = [mono[i:i + rate] for i in range(0, len(mono) - rate, rate)]
+    loud = [20 * np.log10(np.sqrt(np.mean(x * x)) + 1e-9) for x in secs]
+    quiet = sum(1 for v in loud if v < -50)
+    print(f'audio: {len(mono) / rate:.1f} s at {rate} Hz, median {np.median(loud):.1f} dB, {quiet} silent seconds -> {path}', flush=True)
+
+
 def hits(st):
     out = []
     for part in st.get('hits', '').split(';'):
@@ -293,6 +312,7 @@ def main():
         d.shot('game-over')
         print('RESULT:', d.state.get('main'), d.state.get('score'))
         result = 'PASS' if d.state.get('over') == '1' else 'PARTIAL' if turns >= a.turns else 'FAIL'
+        save_audio(d, os.path.join(a.out, 'session.wav'))
         if a.scenario == 'screens':
             screens(d)
         print(result)

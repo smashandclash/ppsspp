@@ -831,7 +831,7 @@ static void draw_rules(view_t *v, snc_client *c, uint32_t now) {
 	gx_text(&tfont_label, 332, 44, "On the PSP", W(C_SUN1));
 	gx_wrap(&tfont_small, 332, 64, 118, tfont_small.line - 1,
 	        "D-pad: move. Cross: pick a card, then a green tile. Circle: put it back. Square: Stay, or play Flip! / Swap!. L / R: your next card. "
-	        "START: resign. Up / down here: scroll.",
+	        "START: resign (lobby: sound on/off). Up / down here: scroll.",
 	        W(C_SUGAR), 11);
 	slab(v, 330, 222, 120, 32, FILL_SUN, "BACK", NULL, 'o', H_BACK, 0, 0, &tfont_label, now);
 }

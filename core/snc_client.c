@@ -12,8 +12,9 @@ static snc_api *net_api;  // set by the network thread; the UI only uses it to c
 /* ---------------------------------- record ----------------------------------- */
 
 void snc_record_text(const snc_record *r, char *out, size_t cap) {
-	snprintf(out, cap, "rating=%d\nplayed=%d\nwon=%d\nruleset=%c\nid=%s\ntoken=%s\nmode=%c\nstrength=%d\ninvite=%s\ncode=%s\nchamp=%d\n", r->rating, r->played,
-	         r->won, r->ruleset ? r->ruleset : 'm', r->id, r->token, r->mode ? r->mode : '-', r->strength, r->invite, r->code, r->champ);
+	snprintf(out, cap, "rating=%d\nplayed=%d\nwon=%d\nruleset=%c\nid=%s\ntoken=%s\nmode=%c\nstrength=%d\ninvite=%s\ncode=%s\nchamp=%d\nsound=%d\n", r->rating,
+	         r->played, r->won, r->ruleset ? r->ruleset : 'm', r->id, r->token, r->mode ? r->mode : '-', r->strength, r->invite, r->code, r->champ,
+	         r->sound);
 }
 
 static void record_parse(snc_record *r, const char *text) {
@@ -21,6 +22,7 @@ static void record_parse(snc_record *r, const char *text) {
 	r->rating = 1200;
 	r->ruleset = 'm';
 	r->strength = 1200;
+	r->sound = 1;
 	while (text && *text) {
 		const char *eol = strchr(text, '\n');
 		size_t n = eol ? (size_t)(eol - text) : strlen(text);
@@ -41,6 +43,7 @@ static void record_parse(snc_record *r, const char *text) {
 			else if (!strcmp(k, "mode")) r->mode = *v == '-' ? 0 : *v;
 			else if (!strcmp(k, "strength")) r->strength = atoi(v);
 			else if (!strcmp(k, "champ")) r->champ = atoi(v);
+			else if (!strcmp(k, "sound")) r->sound = atoi(v) != 0;
 			else if (!strcmp(k, "invite")) snprintf(r->invite, sizeof r->invite, "%s", v);
 			else if (!strcmp(k, "code")) snprintf(r->code, sizeof r->code, "%s", v);
 		}
@@ -526,6 +529,12 @@ void snc_act_toggle_rules(snc_client *c) {
 	c->rec.ruleset = c->rec.ruleset == 'c' ? 'm' : 'c';
 	c->rec_dirty = 1;
 	say(c, snc_client_active(c) ? "The next game uses these rules." : c->rec.ruleset == 'c' ? "Rules: Classic." : "Rules: Mutators.", 2500, 0);
+}
+
+void snc_act_toggle_sound(snc_client *c) {
+	c->rec.sound = !c->rec.sound;
+	c->rec_dirty = 1;
+	say(c, c->rec.sound ? "Sound on." : "Sound off.", 2500, 0);
 }
 
 void snc_act_how_to_play(snc_client *c) {

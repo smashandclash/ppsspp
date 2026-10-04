@@ -17,15 +17,15 @@ endif
 TARGET = smashandclash
 # the core, minus the software renderer (the GPU draws here)
 CORE = $(patsubst %.c,%.o,$(filter-out ../core/snc_gfx.c ../core/snc_draw.c,$(wildcard ../core/*.c)))
-OBJS = source/main.o source/net_psp.o source/gx.o source/view3d.o $(CORE) \
-	build/assets/assets_data.o build/tex/textures_data.o build/tex/textures_bin.o
+OBJS = source/main.o source/net_psp.o source/gx.o source/view3d.o source/sound.o $(CORE) \
+	build/assets/assets_data.o build/tex/textures_data.o build/tex/textures_bin.o audio/audio.o
 
-INCDIR = source ../core build/assets build/tex
+INCDIR = source ../core build/assets build/tex audio
 CFLAGS = -O2 -G0 -Wall -DSNC_PIXEL_PSP
 CXXFLAGS = $(CFLAGS)
 ASFLAGS = $(CFLAGS)
 
-LIBS = -lmbedtls -lmbedx509 -lmbedcrypto -lpspgu -lpspnet_apctl -lpspnet_resolver -lpspnet_inet -lpspnet -lpsputility -lpsprtc -lpsppower -lm
+LIBS = -lmbedtls -lmbedx509 -lmbedcrypto -lpspaudio -lpspgu -lpspnet_apctl -lpspnet_resolver -lpspnet_inet -lpspnet -lpsputility -lpsprtc -lpsppower -lm
 
 EXTRA_TARGETS = EBOOT.PBP
 PSP_EBOOT_TITLE = Smash&Clash
@@ -34,6 +34,10 @@ PSP_EBOOT_PIC1 = build/assets/PIC1.PNG
 
 PSPSDK = $(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build.mak
+
+# the music and effects (made by ../tools/audio/make_audio.py, committed in audio/), pulled in with .incbin
+audio/audio.o: audio/audio.s $(wildcard audio/*.bin)
+	$(CC) -G0 -c -o $@ $<
 
 # the textures, pulled in with .incbin
 build/tex/textures_bin.o: build/tex/textures_bin.s build/tex/textures.bin

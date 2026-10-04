@@ -21,6 +21,7 @@
 #include "snc_client.h"
 #include "snc_draw.h"
 #include "snc_platform.h"
+#include "sound.h"
 #include "view3d.h"
 
 PSP_MODULE_INFO("Smash&Clash", PSP_MODULE_USER, 1, 0);
@@ -34,6 +35,7 @@ PSP_HEAP_SIZE_KB(-1024);
 static snc_client client;
 static snc_api api;
 static view_t view;
+static snc_sound sound;
 static char record_path[256];
 static volatile int net_ok = -1;
 
@@ -158,36 +160,44 @@ static void read_pad(pad_t *p) {
 	p->held = b;
 }
 
-static void handle_input(const pad_t *p) {
-	unsigned down = p->down, rep = p->rep;
+// The buttons, and the sounds they make (a mask of SFX_*).
+static unsigned handle_input(const pad_t *p) {
+	unsigned down = p->down, rep = p->rep, fx = 0;
 	if (view3d_in_intro(&client, snc_now_ms())) {  // the VS intro: any of these skips it
-		if (down & (PSP_CTRL_CROSS | PSP_CTRL_CIRCLE | PSP_CTRL_START)) view3d_skip_intro();
-		return;
+		if (down & (PSP_CTRL_CROSS | PSP_CTRL_CIRCLE | PSP_CTRL_START)) view3d_skip_intro(), fx |= 1u << SFX_SELECT;
+		return fx;
 	}
 	if (client.screen == SC_LOBBY || (client.screen == SC_GAME && !client.have_game)) {
-		if (down & PSP_CTRL_LTRIGGER) view3d_champ_step(&client, -1);  // the champion spotlight
-		if (down & PSP_CTRL_RTRIGGER) view3d_champ_step(&client, 1);
+		if (down & PSP_CTRL_LTRIGGER) view3d_champ_step(&client, -1), fx |= 1u << SFX_MOVE;  // the champion spotlight
+		if (down & PSP_CTRL_RTRIGGER) view3d_champ_step(&client, 1), fx |= 1u << SFX_MOVE;
 	}
 	if (client.screen == SC_RULES) {
 		if (rep & PSP_CTRL_UP) view_scroll(&view, -2);
 		if (rep & PSP_CTRL_DOWN) view_scroll(&view, 2);
 		if (rep & PSP_CTRL_LTRIGGER) view_scroll(&view, -10);
 		if (rep & PSP_CTRL_RTRIGGER) view_scroll(&view, 10);
-		if (down & (PSP_CTRL_CIRCLE | PSP_CTRL_TRIANGLE | PSP_CTRL_CROSS)) snc_act_back(&client);
-		return;
+		if (down & (PSP_CTRL_CIRCLE | PSP_CTRL_TRIANGLE | PSP_CTRL_CROSS)) snc_act_back(&client), fx |= 1u << SFX_BACK;
+		return fx;
 	}
+	int before = view.focus_id * 256 + view.focus_arg;
 	if (rep & PSP_CTRL_UP) view_nav(&view, 0, -1);
 	if (rep & PSP_CTRL_DOWN) view_nav(&view, 0, 1);
 	if (rep & PSP_CTRL_LEFT) view_nav(&view, -1, 0);
 	if (rep & PSP_CTRL_RIGHT) view_nav(&view, 1, 0);
-	if (down & PSP_CTRL_CROSS) view_activate(&view, &client);
-	if (down & PSP_CTRL_CIRCLE) view_back(&view, &client);
-	if (down & PSP_CTRL_SQUARE) snc_act_action(&client);
-	if (down & PSP_CTRL_TRIANGLE) snc_act_how_to_play(&client);
+	if (view.focus_id * 256 + view.focus_arg != before) fx |= 1u << SFX_MOVE;
+	if (down & PSP_CTRL_CROSS) view_activate(&view, &client), fx |= 1u << SFX_SELECT;
+	if (down & PSP_CTRL_CIRCLE) view_back(&view, &client), fx |= 1u << SFX_BACK;
+	if (down & PSP_CTRL_SQUARE) snc_act_action(&client), fx |= 1u << SFX_SELECT;
+	if (down & PSP_CTRL_TRIANGLE) snc_act_how_to_play(&client), fx |= 1u << SFX_SELECT;
 	if (down & PSP_CTRL_LTRIGGER) view_step_hand(&view, &client, -1);
 	if (down & PSP_CTRL_RTRIGGER) view_step_hand(&view, &client, 1);
-	if ((down & PSP_CTRL_START) && client.screen == SC_GAME) snc_act_resign(&client);
-	if ((down & PSP_CTRL_SELECT) && snc_client_over(&client)) view.show_replay = !view.show_replay;
+	if (down & PSP_CTRL_START) {
+		if (client.screen == SC_GAME && client.have_game) snc_act_resign(&client);
+		else if (client.screen == SC_LOBBY || client.screen == SC_GAME) snc_act_toggle_sound(&client);  // the lobby: sound on or off
+		fx |= 1u << SFX_SELECT;
+	}
+	if ((down & PSP_CTRL_SELECT) && snc_client_over(&client)) view.show_replay = !view.show_replay, fx |= 1u << SFX_SELECT;
+	return fx;
 }
 
 static uint32_t signature(void) {
@@ -246,6 +256,8 @@ int main(int argc, char **argv) {
 	sceUtilityGetSystemParamString(PSP_SYSTEMPARAM_ID_STRING_NICKNAME, name, sizeof name);
 	if (!name[0]) snprintf(name, sizeof name, "PSP player");
 	snc_client_init(&client, name, "PSP", record);
+	psp_sound_init();
+	psp_sound_music(client.rec.sound ? MUS_LOBBY : MUS_NONE);  // the lobby's theme while the network comes up
 	view_init(&view);
 
 	boot_screen("Starting the network...", NET_HELP, 0);
@@ -269,8 +281,12 @@ int main(int argc, char **argv) {
 	uint32_t last_sig = 0;
 	for (;;) {  // every frame: the GPU redraws it all (the cards animate)
 		read_pad(&pad);
-		handle_input(&pad);
+		unsigned fx = handle_input(&pad);
 		snc_client_tick(&client);
+		snc_music music;
+		fx |= snc_sound_update(&sound, &client, &music);
+		psp_sound_music(music);
+		if (client.rec.sound) psp_sound_sfx(fx);
 		if (client.rec_dirty) record_save();
 		gx_begin(0x016DCB);
 		view3d_draw(&view, &client, snc_now_ms());

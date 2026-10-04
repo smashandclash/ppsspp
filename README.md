@@ -26,6 +26,7 @@ Looking for the DS and the Game Boy Advance? They have their own repo, with Delt
 - [Play it in a minute](#play-it-in-a-minute)
 - [Screenshots](#screenshots)
 - [How to play](#how-to-play)
+- [The sound](#the-sound)
 - [How it works](#how-it-works)
 - [The SDK, call by call](#the-sdk-call-by-call)
 - [Build it yourself](#build-it-yourself)
@@ -40,6 +41,7 @@ Looking for the DS and the Game Boy Advance? They have their own repo, with Delt
 | --- | --- |
 | [`psp/`](psp) | **The PSP game** (C, [PSPDEV](https://pspdev.github.io)). The network on its own thread; the screens drawn with the GU, the PSP's GPU. |
 | [`psp/source/view3d.c`](psp/source/view3d.c) | The screens: the lobby with the champion spotlight, the perspective board, cards that fly and turn, the VS intro, the result slab. |
+| [`psp/audio/`](psp/audio) | **The PSP's own soundtrack and effects** ([`tools/audio/`](tools/audio) made them). |
 | [`core/`](core) | The shared C core (the same one the DS and GBA games use): an HTTPS keep-alive client on mbedTLS, the SDK's calls in C, the client's state machine and D-pad navigation. |
 | [`tools/`](tools) | Builds the art from the real game: the 51-card deck, the champions, the wooden board with the engraved Smash&Clash logo, the fonts, the XMB icon; and the TLS root certificates. |
 | [`tests/`](tests) | A headless PPSSPP test that plays a full online game and visits every screen. |
@@ -91,7 +93,13 @@ You are always blue and the other side orange, whichever seat you hold. **Quick 
 | **Triangle** | how to play |
 | **L** / **R** | your next playable card (in the lobby: your champion) |
 | **SELECT** | the replay QR, after a game |
-| **START** | resign (press twice) |
+| **START** | resign (press twice); in the lobby: sound on or off |
+
+## The sound
+
+The PSP has its own original soundtrack and effects, made with [ElevenLabs](https://elevenlabs.io): late-night arcade synth (shimmering pads, analog bass, breakbeats), with a lobby theme, a game theme, a win and a lose jingle, and eight effects (the cursor, picking, backing out, a card landing, a capture, your turn, a "not allowed" and the game starting). The DS and the GBA each have a sound of their own: handheld pop and pocket chiptune ([smashandclash/delta](https://github.com/smashandclash/delta)).
+
+A mixer on its own thread ([`psp/source/sound.c`](psp/source/sound.c)) plays the theme and up to four effects at once: 16-bit PCM at 22050 Hz, out at 44100 Hz stereo through one hardware channel. The themes loop seamlessly: [`tools/audio/make_audio.py`](tools/audio/make_audio.py) cuts each one on the bar, a whole number of bars long, lined up by cross-correlation and crossfaded at the seam. What plays when is shared with the DS and GBA ([`core/snc_sound.c`](core/snc_sound.c)). **START** in the lobby turns the sound off (and on again); the game remembers.
 
 ## How it works
 
@@ -151,7 +159,7 @@ The build runs on Linux (or WSL) with [PSPDEV](https://pspdev.github.io) on the 
 make -C psp            # -> psp/EBOOT.PBP
 ```
 
-`tools/make_certs.mjs` refreshes the built-in root certificates (`core/snc_certs.h`) from `tools/roots.pem`.
+`tools/make_certs.mjs` refreshes the built-in root certificates (`core/snc_certs.h`) from `tools/roots.pem`. The sound is committed, ready to build (`psp/audio/`); [`tools/audio/gen.mjs`](tools/audio/gen.mjs) holds the prompts it was made from (it needs an ElevenLabs API key to make new takes) and [`tools/audio/make_audio.py`](tools/audio/make_audio.py) encodes them (numpy and ffmpeg).
 
 ## Tests: real games, headless
 

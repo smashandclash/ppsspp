@@ -51,6 +51,7 @@ typedef struct {
 	char id[32], token[64], mode, invite[200], code[8];  // the game in progress
 	int strength;
 	int champ;           // the champion you play as (a card id, 1..46; 0 = not chosen)
+	int sound;           // music and effects: 1 on, 0 off
 } snc_record;
 
 typedef struct {
@@ -122,6 +123,7 @@ void snc_act_cell(snc_client *c, int cell);    // pick a board tile
 void snc_act_action(snc_client *c);            // the status's contextual button
 void snc_act_lobby(snc_client *c);             // leave a finished game
 void snc_act_toggle_rules(snc_client *c);      // Mutators <-> Classic
+void snc_act_toggle_sound(snc_client *c);      // sound on <-> off
 void snc_act_how_to_play(snc_client *c);
 void snc_act_code_screen(snc_client *c);
 void snc_act_back(snc_client *c);
