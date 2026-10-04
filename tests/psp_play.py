@@ -25,6 +25,8 @@ from libretro.drivers import ArrayAudioDriver, DictOptionDriver, IterableInputDr
 from libretro.drivers.video.opengl.moderngl import ModernGlVideoDriver
 from PIL import Image
 
+from recorder import Recorder, hold
+
 import retro_log
 
 retro_log.enable()
@@ -36,6 +38,7 @@ H_HAND, H_CELL, H_NEW, H_QUICK, H_INVITE, H_CODE, H_HOW, H_ACTION, H_LOBBY, H_RE
 
 class Driver:
     def __init__(self, eboot, out, options, name='Ada'):
+        self.rec = Recorder()
         self.out = out
         os.makedirs(out, exist_ok=True)
         self.tmp = tempfile.mkdtemp()
@@ -85,6 +88,7 @@ class Driver:
     def frames(self, n):
         for _ in range(n):
             self.session.run()
+            self.rec.frame(self.session)
         self.read_state()
 
     def wait_for(self, cond, seconds=60):
@@ -96,8 +100,9 @@ class Driver:
         return False
 
     def press(self, frames=5, **buttons):
-        self.queue.extend([JoypadState(**buttons)] * frames + [0] * 6)
-        self.frames(frames + 8)
+        h, rest = hold(frames)
+        self.queue.extend([JoypadState(**buttons)] * h + [0] * (rest or 6))
+        self.frames(h + (rest or 6) + 2)
 
     def shot(self, name):
         self.frames(4)

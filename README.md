@@ -6,9 +6,11 @@
 
 Real games against real people and the house opponent, on smashandclash.in's servers: the wooden board with the engraved logo, the champions, the VS intro and the Game Review, the way [smashandclash.in](https://www.smashandclash.in) draws them.
 
-![Smash&Clash on the PSP, in PPSSPP](media/hero.png)
+[![Smash&Clash, now on retro consoles: watch the launch film](media/preview.gif)](https://github.com/smashandclash/ppsspp/releases/download/v1.1.0/smashandclash-retro-consoles.mp4)
 
-**[⬇ Download the PSP game (v1.0.0)](https://github.com/smashandclash/ppsspp/releases/latest)**
+**[▶ Watch the 52-second launch film (1080p MP4)](https://github.com/smashandclash/ppsspp/releases/download/v1.1.0/smashandclash-retro-consoles.mp4)** · [Portrait cut (9:16)](https://github.com/smashandclash/ppsspp/releases/download/v1.1.0/smashandclash-retro-consoles-portrait.mp4)
+
+**[⬇ Download the PSP game (v1.1.0)](https://github.com/smashandclash/ppsspp/releases/latest)**
 
 **Build your own client today: [docs.smashandclash.in](https://docs.smashandclash.in)**
 
@@ -32,6 +34,7 @@ Looking for the DS and the Game Boy Advance? They have their own repo, with Delt
 - [Build it yourself](#build-it-yourself)
 - [Tests: real games, headless](#tests-real-games-headless)
 - [Build your own client](#build-your-own-client)
+- [The launch film](#the-launch-film)
 - [Troubleshooting](#troubleshooting)
 - [Links](#links)
 
@@ -62,6 +65,8 @@ You need an internet connection; the game runs on smashandclash.in's servers.
 Your record (rating, rules, champion, the game in progress) is kept in `record.txt` next to the EBOOT, so switching off mid-game picks it up where you left it.
 
 ## Screenshots
+
+![Smash&Clash on the PSP, in PPSSPP](media/hero.png)
 
 | | |
 | :---: | :---: |
@@ -176,6 +181,12 @@ It needs `ppsspp_libretro.so` (`PPSSPP_CORE`) and PPSSPP's system files; see the
 ## Build your own client
 
 A PSP is one surface. The same calls work for a Discord bot, a terminal, a game engine, a smartwatch or something nobody has thought of yet. **[docs/build-your-own-client.md](docs/build-your-own-client.md)** is the checklist: the state you get, move names, drawing the board from either seat, effects, hops and overruns, waiting, errors and rate limits, and fair play. Start at **[docs.smashandclash.in](https://docs.smashandclash.in)**.
+
+## The launch film
+
+One film for all three consoles, in a 16:9 and a 9:16 cut: [landscape](https://github.com/smashandclash/ppsspp/releases/download/v1.1.0/smashandclash-retro-consoles.mp4) · [portrait](https://github.com/smashandclash/ppsspp/releases/download/v1.1.0/smashandclash-retro-consoles-portrait.mp4).
+
+Everything on the consoles' screens is real gameplay. The frames come from the same headless emulator runs as [the tests](#tests-real-games-headless) (melonDS, mGBA through the SDK bridge, PPSSPP), recording live online games at a human pace (set `SNC_RECORD=DIR` on any test to record one yourself, see `tests/recorder.py`), and are put on 3D models of a DS, a GBA SP, a PSP and a phone running Delta. The score is the consoles' own soundtracks and effects from [The sound](#the-sound), cut on the bar. The film was made with [HyperFrames](https://github.com/heygen-com/hyperframes).
 
 ## Troubleshooting
 
